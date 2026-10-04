@@ -39,19 +39,57 @@ const dataStore = {
     return otpData;
   },
 
-  async findOtp(sessionId, phone) {
+  async findOtp(sessionId, identifier) {
     if (isDbReady()) {
-      return await OtpSession.findOne({ sessionId, phone });
+      const query = { sessionId };
+      if (identifier) {
+        query.$or = [
+          { phone: identifier },
+          { email: identifier.toString().trim().toLowerCase() }
+        ];
+      }
+      return await OtpSession.findOne(query);
     }
-    return memoryStore.otpSessions.find((s) => s.sessionId === sessionId && s.phone === phone);
+    return memoryStore.otpSessions.find(
+      (s) =>
+        s.sessionId === sessionId &&
+        (!identifier ||
+          s.phone === identifier ||
+          (s.email && s.email.toLowerCase() === identifier.toString().trim().toLowerCase()))
+    );
   },
 
   // --- User Operations ---
   async findUserByPhone(phone) {
+    if (!phone) return null;
     if (isDbReady()) {
       return await User.findOne({ phone });
     }
     return memoryStore.users.find((u) => u.phone === phone);
+  },
+
+  async findUserByEmail(email) {
+    if (!email) return null;
+    const cleanEmail = email.toString().trim().toLowerCase();
+    if (isDbReady()) {
+      return await User.findOne({ email: cleanEmail });
+    }
+    return memoryStore.users.find((u) => u.email && u.email.toLowerCase() === cleanEmail);
+  },
+
+  async findUserByIdentifier({ phone, email }) {
+    if (isDbReady()) {
+      const orConditions = [];
+      if (phone) orConditions.push({ phone });
+      if (email) orConditions.push({ email: email.toString().trim().toLowerCase() });
+      if (orConditions.length === 0) return null;
+      return await User.findOne({ $or: orConditions });
+    }
+    return memoryStore.users.find(
+      (u) =>
+        (phone && u.phone === phone) ||
+        (email && u.email && u.email.toLowerCase() === email.toString().trim().toLowerCase())
+    );
   },
 
   async findUserById(id) {
@@ -177,6 +215,24 @@ const dataStore = {
     return { shops: paginated, total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) };
   },
 
+  async findShopByEmail(email) {
+    if (!email) return null;
+    const cleanEmail = email.toString().trim().toLowerCase();
+    if (isDbReady()) {
+      return await Shop.findOne({ email: cleanEmail });
+    }
+    return memoryStore.shops.find((s) => s.email && s.email.toLowerCase() === cleanEmail);
+  },
+
+  async findShopByPhone(phone) {
+    if (!phone) return null;
+    const cleanPhone = phone.toString().replace(/\D/g, '').slice(-10);
+    if (isDbReady()) {
+      return await Shop.findOne({ phone: new RegExp(cleanPhone) });
+    }
+    return memoryStore.shops.find((s) => s.phone && s.phone.includes(cleanPhone));
+  },
+
   async findShopByIdOrSlug(idOrSlug) {
     if (!idOrSlug) return null;
     if (isDbReady()) {
@@ -244,11 +300,21 @@ const dataStore = {
     onlyWithWarranty,
     sortBy = 'newest',
     page = 1,
-    limit = 24
+    limit = 24,
+    shopId,
+    includeSold
   }) {
     if (isDbReady()) {
-      const query = { isSold: false, isFlagged: { $ne: true } };
-      if (city) query.shopCity = new RegExp(`^${city}$`, 'i');
+      const query = { isFlagged: { $ne: true } };
+      if (!includeSold || includeSold === 'false') {
+        query.isSold = false;
+      }
+      if (shopId) {
+        query.shopId = shopId;
+      }
+      if (city && (!shopId || city.trim() !== '')) {
+        query.shopCity = new RegExp(`^${city}$`, 'i');
+      }
       if (brand) query.brand = brand;
       if (condition) query.condition = condition;
       if (storage) query.storage = storage;
@@ -285,8 +351,16 @@ const dataStore = {
     }
 
     // In-memory
-    let list = memoryStore.phones.filter((p) => !p.isSold && !p.isFlagged);
-    if (city) list = list.filter((p) => p.shopCity.toLowerCase() === city.toLowerCase());
+    let list = memoryStore.phones.filter((p) => !p.isFlagged);
+    if (!includeSold || includeSold === 'false') {
+      list = list.filter((p) => !p.isSold);
+    }
+    if (shopId) {
+      list = list.filter((p) => p.shopId === shopId);
+    }
+    if (city && (!shopId || city.trim() !== '')) {
+      list = list.filter((p) => p.shopCity.toLowerCase() === city.toLowerCase());
+    }
     if (brand) list = list.filter((p) => p.brand === brand);
     if (condition) list = list.filter((p) => p.condition === condition);
     if (storage) list = list.filter((p) => p.storage === storage);

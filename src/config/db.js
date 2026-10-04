@@ -1,5 +1,13 @@
+const dns = require('dns');
 const mongoose = require('mongoose');
 const { MONGODB_URI } = require('./env');
+
+// Resolve MongoDB Atlas SRV records on Windows networks
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // Ignore fallback error if setting DNS servers is restricted
+}
 
 let isConnected = false;
 

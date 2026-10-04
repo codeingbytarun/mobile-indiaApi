@@ -10,7 +10,13 @@ const otpSessionSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: true,
+      trim: true,
+      index: true
+    },
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true,
       index: true
     },
     otp: {
@@ -19,8 +25,8 @@ const otpSessionSchema = new mongoose.Schema(
     },
     channel: {
       type: String,
-      enum: ['sms', 'whatsapp'],
-      default: 'sms'
+      enum: ['sms', 'whatsapp', 'email'],
+      default: 'email'
     },
     isVerified: {
       type: Boolean,
