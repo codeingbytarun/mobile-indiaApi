@@ -17,7 +17,9 @@ const getPhones = async (req, res, next) => {
       onlyWithWarranty,
       sortBy = 'newest',
       page = 1,
-      limit = 24
+      limit = 24,
+      shopId,
+      includeSold
     } = req.query;
 
     const result = await dataStore.findPhones({
@@ -33,7 +35,9 @@ const getPhones = async (req, res, next) => {
       onlyWithWarranty,
       sortBy,
       page,
-      limit
+      limit,
+      shopId,
+      includeSold
     });
 
     return sendSuccess(res, result.phones, 'Phone listings fetched successfully', 200, {

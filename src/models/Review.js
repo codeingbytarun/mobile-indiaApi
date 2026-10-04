@@ -14,7 +14,7 @@ const reviewSchema = new mongoose.Schema(
     },
     buyerId: {
       type: String,
-      required: true,
+      default: 'usr_guest',
       index: true
     },
     buyerName: {

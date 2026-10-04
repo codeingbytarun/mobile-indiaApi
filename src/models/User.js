@@ -7,20 +7,33 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      sparse: true,
+      unique: true,
+      index: true
+    },
     phone: {
       type: String,
-      required: true,
+      trim: true,
+      sparse: true,
       unique: true,
-      trim: true
+      index: true
     },
     role: {
       type: String,
       enum: ['buyer', 'shopkeeper', 'admin'],
       default: 'buyer'
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false
+    },
     isPhoneVerified: {
       type: Boolean,
-      default: true
+      default: false
     },
     shopId: {
       type: String,

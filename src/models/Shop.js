@@ -29,10 +29,21 @@ const shopSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      sparse: true,
+      index: true
+    },
     phone: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
+      unique: true,
+      sparse: true,
+      index: true
     },
     whatsapp: {
       type: String,

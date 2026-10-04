@@ -101,9 +101,23 @@ Update `src/app/models/user.model.ts`:
 export interface UserSession {
   id: string;
   name: string;
-  phone: string;
+  email?: string | null;
+  phone?: string | null;
   role: 'buyer' | 'shopkeeper' | 'admin';
   shopId?: string | null;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+}
+
+export interface SendOtpResponse {
+  sessionId: string;
+  channel: 'email' | 'sms' | 'whatsapp';
+  email?: string;
+  phone?: string;
+  sentToEmail?: string;
+  expiresInSeconds: number;
+  delivered?: boolean;
+  devOtp?: string;
 }
 
 export interface AuthVerifyResponse {
@@ -145,7 +159,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
 ## 4. Master Angular Services
 
-### 4.1 AuthService (7 APIs)
+### 4.1 AuthService (7 APIs - Email & Phone Supported)
 
 Create `src/app/services/auth.service.ts`:
 
@@ -156,7 +170,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-import { UserSession, AuthVerifyResponse } from '../models/user.model';
+import { UserSession, AuthVerifyResponse, SendOtpResponse } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
@@ -168,17 +182,15 @@ export class AuthService {
   readonly currentUser = signal<UserSession | null>(this.loadStoredUser());
   readonly isAuthenticated = signal<boolean>(!!localStorage.getItem('mobimarket_token'));
 
-  // 1.1 Send OTP
-  sendOtp(phone: string, channel: 'sms' | 'whatsapp' = 'sms'): Observable<ApiResponse<{ sessionId: string }>> {
-    return this.http.post<ApiResponse<{ sessionId: string }>>(`${this.baseUrl}/send-otp`, {
-      phone,
-      channel
-    });
+  // 1.1 Send OTP (Supports both Email and Phone)
+  sendOtp(target: { email?: string; phone?: string; channel?: 'email' | 'sms' | 'whatsapp' }): Observable<ApiResponse<SendOtpResponse>> {
+    return this.http.post<ApiResponse<SendOtpResponse>>(`${this.baseUrl}/send-otp`, target);
   }
 
   // 1.2 Verify OTP (Login / Auto-register)
   verifyOtp(payload: {
-    phone: string;
+    email?: string;
+    phone?: string;
     otp: string;
     sessionId?: string;
     roleHint?: 'buyer' | 'shopkeeper';
@@ -197,9 +209,15 @@ export class AuthService {
     );
   }
 
-  // 1.3 Register Shopkeeper
+  // 1.7 Resend OTP
+  resendOtp(payload: { sessionId?: string; email?: string; phone?: string }): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}/resend-otp`, payload);
+  }
+
+  // 1.3 Register Shopkeeper (Unique business email enforced)
   registerShopkeeper(shopData: {
     ownerName: string;
+    email?: string;
     phone: string;
     whatsapp: string;
     shopName: string;

@@ -436,6 +436,7 @@ const seedReviews = [
   {
     customId: 'rev_01',
     shopId: 'shop_01',
+    buyerId: 'usr_guest_01',
     buyerName: 'Amit Meena',
     rating: 5,
     comment: 'Genuine shop! Tested iPhone 13 before buying, got physical GST bill and 30-day warranty.'
@@ -443,6 +444,7 @@ const seedReviews = [
   {
     customId: 'rev_02',
     shopId: 'shop_01',
+    buyerId: 'usr_guest_02',
     buyerName: 'Sanjay Kumar',
     rating: 5,
     comment: 'Best shop in Malviya Nagar. Rajesh ji explained all battery and condition details transparently.'
@@ -450,6 +452,7 @@ const seedReviews = [
   {
     customId: 'rev_03',
     shopId: 'shop_02',
+    buyerId: 'usr_guest_03',
     buyerName: 'Priya Sharma',
     rating: 4,
     comment: 'Great collection of Samsung devices in Raja Park. Got a fair deal on S23.'
